@@ -233,16 +233,48 @@ function Sidebar() {
       </nav>
 
       <div className="px-6 pt-8">
-        <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-3 font-mono">
-          Matérias
+        <div className="flex items-center gap-2 mb-4">
+          <span className="size-1.5 rounded-full bg-accent" />
+          <span className="text-[10px] uppercase tracking-[0.2em] text-accent font-mono font-semibold">
+            Matérias
+          </span>
+          <span className="ml-auto text-[10px] font-mono text-muted-foreground tabular-nums">
+            {subjects.length}
+          </span>
         </div>
-        <div className="space-y-1 text-sm">
-          {subjects.slice(0, 4).map((s) => (
+        <div className="space-y-1">
+          {subjects.slice(0, 5).map((s) => (
             <button
               key={s.title}
-              className="w-full text-left text-muted-foreground hover:text-foreground transition-colors py-1.5 truncate"
+              className="group w-full text-left px-3 py-2.5 rounded-xl hover:bg-white/70 transition-colors"
             >
-              {s.title}
+              <div className="flex items-center gap-2 mb-1.5">
+                <span
+                  className={
+                    "size-1.5 rounded-full shrink-0 " +
+                    (s.progress === 100
+                      ? "bg-emerald-500"
+                      : s.progress > 0
+                        ? "bg-accent"
+                        : "bg-foreground/20")
+                  }
+                />
+                <span className="text-[12px] font-medium text-foreground/85 group-hover:text-foreground truncate flex-1">
+                  {s.title.replace(/^Conhecimentos (Gerais|Específicos)[:–\s-]*/i, "")}
+                </span>
+                <span className="text-[9px] font-mono text-muted-foreground tabular-nums shrink-0">
+                  {s.progress}%
+                </span>
+              </div>
+              <div className="h-[2px] rounded-full bg-foreground/5 overflow-hidden ml-3.5">
+                <div
+                  className={
+                    "h-full rounded-full transition-all " +
+                    (s.progress === 100 ? "bg-emerald-500" : "bg-foreground/70")
+                  }
+                  style={{ width: `${Math.max(s.progress, 4)}%` }}
+                />
+              </div>
             </button>
           ))}
         </div>
@@ -250,7 +282,7 @@ function Sidebar() {
 
       <div className="mt-auto p-6">
         <div className="rounded-2xl border border-accent/15 bg-accent/[0.04] p-4">
-          <p className="font-serif italic text-sm text-foreground leading-snug mb-2">
+          <p className="font-display text-[15px] font-medium text-foreground leading-snug mb-2">
             "O sucesso é a soma de pequenos esforços, repetidos dia após dia."
           </p>
           <p className="text-[10px] uppercase tracking-widest text-accent/70 font-mono">
@@ -312,7 +344,7 @@ function Header() {
           <ChevronRight className="size-3" />
           <span className="text-foreground">Concurso SED – ATA II</span>
         </nav>
-        <h1 className="font-serif italic text-5xl font-bold tracking-tight text-balance">
+        <h1 className="font-display text-5xl font-bold tracking-tight text-balance">
           Concurso SED – ATA II
         </h1>
       </div>
@@ -336,7 +368,7 @@ function ProgressHero() {
           <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-mono mb-2">
             Seu progresso geral
           </p>
-          <h2 className="font-serif italic text-4xl font-bold mb-3">
+          <h2 className="font-display text-4xl font-bold mb-3">
             Muito Bom!
           </h2>
           <p className="text-sm text-muted-foreground max-w-md leading-relaxed mb-6">
@@ -476,10 +508,16 @@ function ProgressRing({
 function SubjectsSection() {
   return (
     <section className="animate-fade-up">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-[10px] uppercase tracking-[0.2em] font-mono text-muted-foreground">
-          Matérias
-        </h2>
+      <div className="flex items-end justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <span className="size-1.5 rounded-full bg-accent" />
+          <h2 className="text-[10px] uppercase tracking-[0.2em] font-mono font-semibold text-accent">
+            Matérias
+          </h2>
+          <span className="text-[11px] text-muted-foreground font-mono">
+            {subjects.length} no total · {subjects.filter((s) => s.progress === 100).length} concluídas
+          </span>
+        </div>
         <a
           href="#"
           className="text-xs font-medium text-foreground inline-flex items-center gap-1 hover:text-accent transition-colors"
@@ -674,7 +712,7 @@ function WeeklyPerformance() {
         action="Ver análise completa"
       />
       <div className="mb-4">
-        <p className="font-serif italic text-3xl font-bold">
+        <p className="font-display text-3xl font-bold">
           7h<span className="text-muted-foreground">30m</span>
         </p>
         <p className="text-xs text-muted-foreground mt-1">Pico no domingo</p>
@@ -784,7 +822,7 @@ function UpcomingEmpty() {
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-mono text-muted-foreground">
           <span>Próximos compromissos</span>
         </div>
-        <p className="font-serif italic text-2xl font-bold">
+        <p className="font-display text-2xl font-bold">
           Sem compromissos agendados
         </p>
         <p className="text-sm text-muted-foreground max-w-sm">
@@ -810,7 +848,7 @@ function MotivationalBanner() {
         <Target className="size-6 text-accent" />
       </div>
       <div className="flex-1 min-w-0">
-        <h3 className="font-serif italic text-3xl font-bold mb-2 leading-tight">
+        <h3 className="font-display text-3xl font-bold mb-2 leading-tight">
           Disciplina hoje, aprovação amanhã.
         </h3>
         <p className="text-sm text-background/60 max-w-xl">
