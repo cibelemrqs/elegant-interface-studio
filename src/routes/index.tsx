@@ -344,7 +344,7 @@ function Header() {
           <ChevronRight className="size-3" />
           <span className="text-foreground">Concurso SED – ATA II</span>
         </nav>
-        <h1 className="font-serif italic text-5xl font-bold tracking-tight text-balance">
+        <h1 className="font-display text-5xl font-bold tracking-tight text-balance">
           Concurso SED – ATA II
         </h1>
       </div>
@@ -368,7 +368,7 @@ function ProgressHero() {
           <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-mono mb-2">
             Seu progresso geral
           </p>
-          <h2 className="font-serif italic text-4xl font-bold mb-3">
+          <h2 className="font-display text-4xl font-bold mb-3">
             Muito Bom!
           </h2>
           <p className="text-sm text-muted-foreground max-w-md leading-relaxed mb-6">
@@ -706,7 +706,7 @@ function WeeklyPerformance() {
         action="Ver análise completa"
       />
       <div className="mb-4">
-        <p className="font-serif italic text-3xl font-bold">
+        <p className="font-display text-3xl font-bold">
           7h<span className="text-muted-foreground">30m</span>
         </p>
         <p className="text-xs text-muted-foreground mt-1">Pico no domingo</p>
@@ -816,7 +816,7 @@ function UpcomingEmpty() {
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-mono text-muted-foreground">
           <span>Próximos compromissos</span>
         </div>
-        <p className="font-serif italic text-2xl font-bold">
+        <p className="font-display text-2xl font-bold">
           Sem compromissos agendados
         </p>
         <p className="text-sm text-muted-foreground max-w-sm">
@@ -842,7 +842,7 @@ function MotivationalBanner() {
         <Target className="size-6 text-accent" />
       </div>
       <div className="flex-1 min-w-0">
-        <h3 className="font-serif italic text-3xl font-bold mb-2 leading-tight">
+        <h3 className="font-display text-3xl font-bold mb-2 leading-tight">
           Disciplina hoje, aprovação amanhã.
         </h3>
         <p className="text-sm text-background/60 max-w-xl">
