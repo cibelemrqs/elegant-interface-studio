@@ -508,10 +508,16 @@ function ProgressRing({
 function SubjectsSection() {
   return (
     <section className="animate-fade-up">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-[10px] uppercase tracking-[0.2em] font-mono text-muted-foreground">
-          Matérias
-        </h2>
+      <div className="flex items-end justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <span className="size-1.5 rounded-full bg-accent" />
+          <h2 className="text-[10px] uppercase tracking-[0.2em] font-mono font-semibold text-accent">
+            Matérias
+          </h2>
+          <span className="text-[11px] text-muted-foreground font-mono">
+            {subjects.length} no total · {subjects.filter((s) => s.progress === 100).length} concluídas
+          </span>
+        </div>
         <a
           href="#"
           className="text-xs font-medium text-foreground inline-flex items-center gap-1 hover:text-accent transition-colors"
