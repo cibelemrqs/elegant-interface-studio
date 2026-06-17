@@ -216,9 +216,10 @@ function DashboardGlobalPage() {
           <FocusNow />
           <GlobalProgress />
 
+          <ImportStack />
+
           <AreasComparative />
           <TodayPlanner />
-          <ImportStack />
 
           <ConsistencyHeatmap />
           <TrendCard />
