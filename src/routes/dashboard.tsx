@@ -809,7 +809,7 @@ function TrendCard() {
               }}
               formatter={(v: number) => [`${v}h`, "Estudo"]}
             />
-            <Area
+            <RArea
               type="monotone"
               dataKey="h"
               stroke="var(--accent)"
