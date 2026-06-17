@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  Area,
+  Area as RArea,
   AreaChart,
   ResponsiveContainer,
   Tooltip,
