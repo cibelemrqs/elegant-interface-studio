@@ -216,9 +216,10 @@ function DashboardGlobalPage() {
           <FocusNow />
           <GlobalProgress />
 
+          <ImportStack />
+
           <AreasComparative />
           <TodayPlanner />
-          <ImportStack />
 
           <ConsistencyHeatmap />
           <TrendCard />
@@ -662,32 +663,97 @@ function TodayPlanner() {
 
 function ImportStack() {
   const items = [
-    { icon: Link2, title: "Adicionar Curso", sub: "Plataforma de ensino" },
-    { icon: Youtube, title: "Importar Vídeo", sub: "Link YouTube" },
-    { icon: Mic, title: "Enviar Áudio", sub: "MP3 / gravação" },
-    { icon: Headphones, title: "Aula em áudio", sub: "Podcast / aula" },
+    {
+      icon: Link2,
+      title: "Curso completo",
+      sub: "Alura, Udemy, Coursera, Hotmart…",
+      tag: "Mais usado",
+    },
+    {
+      icon: Youtube,
+      title: "Vídeo do YouTube",
+      sub: "Cole o link — extraímos a transcrição",
+      tag: null,
+    },
+    {
+      icon: Mic,
+      title: "Áudio ou gravação",
+      sub: "MP3, M4A ou grave direto pelo app",
+      tag: null,
+    },
+    {
+      icon: Headphones,
+      title: "Podcast / aula",
+      sub: "RSS, Spotify, Apple Podcasts",
+      tag: null,
+    },
   ];
+
   return (
-    <section className="col-span-12 lg:col-span-4 rounded-3xl border border-border bg-white p-7 animate-fade-up">
-      <div className="flex items-center justify-between mb-5">
-        <p className="text-[10px] uppercase tracking-[0.2em] font-mono text-muted-foreground">
-          Importar conteúdo
-        </p>
-        <Sparkles className="size-4 text-accent" />
+    <section className="col-span-12 rounded-3xl border border-foreground/10 bg-foreground text-background p-7 lg:p-9 relative overflow-hidden animate-fade-up">
+      <div className="absolute -top-32 -left-20 size-80 rounded-full bg-accent/25 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -right-20 size-80 rounded-full bg-accent/15 blur-3xl pointer-events-none" />
+
+      <div className="relative grid lg:grid-cols-[minmax(0,1fr)_auto] gap-6 items-end mb-8">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-mono text-accent mb-4">
+            <Sparkles className="size-3" />
+            Importar conteúdo
+          </div>
+          <h2 className="font-serif italic text-3xl lg:text-[40px] leading-[1.05] font-bold text-balance max-w-2xl">
+            Traga qualquer aula. A gente transforma em estudo.
+          </h2>
+          <p className="mt-3 text-sm text-background/60 max-w-lg">
+            Curso, vídeo, áudio ou podcast — geramos resumos, flashcards e
+            cronograma automaticamente para cada nova área.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button className="inline-flex items-center gap-2 px-5 py-3 bg-background text-foreground rounded-full text-sm font-medium hover:scale-[1.02] active:scale-[0.99] transition-transform">
+            <Plus className="size-4" /> Nova importação
+          </button>
+        </div>
       </div>
-      <div className="grid grid-cols-2 gap-2.5">
+
+      <div className="relative grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
         {items.map((i) => (
           <button
             key={i.title}
-            className="group text-left rounded-2xl border border-border p-3.5 hover:border-foreground/20 hover:bg-secondary/40 transition-all"
+            className="group relative text-left rounded-2xl border border-background/10 bg-background/[0.04] backdrop-blur-md p-5 hover:bg-background/[0.08] hover:border-background/20 transition-all"
           >
-            <div className="size-8 rounded-lg bg-accent/10 text-accent grid place-items-center mb-3">
-              <i.icon className="size-4" />
+            <div className="flex items-start justify-between mb-6">
+              <div className="size-11 rounded-xl bg-accent/15 text-accent grid place-items-center group-hover:bg-accent/25 transition-colors">
+                <i.icon className="size-5" />
+              </div>
+              {i.tag && (
+                <span className="text-[9px] uppercase tracking-widest font-mono text-accent px-2 py-1 rounded-full border border-accent/30">
+                  {i.tag}
+                </span>
+              )}
             </div>
-            <p className="text-sm font-medium leading-tight">{i.title}</p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">{i.sub}</p>
+            <p className="font-serif italic text-xl font-bold leading-tight">
+              {i.title}
+            </p>
+            <p className="text-xs text-background/55 mt-1.5 leading-relaxed">
+              {i.sub}
+            </p>
+            <div className="mt-5 inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-widest text-background/60 group-hover:text-accent transition-colors">
+              Começar <ArrowUpRight className="size-3" />
+            </div>
           </button>
         ))}
+      </div>
+
+      <div className="relative mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[10px] font-mono uppercase tracking-widest text-background/45">
+        <span className="text-background/70">Arraste arquivos aqui</span>
+        <span>·</span>
+        <span>PDF</span>
+        <span>·</span>
+        <span>EPUB</span>
+        <span>·</span>
+        <span>DOCX</span>
+        <span>·</span>
+        <span>SRT</span>
       </div>
     </section>
   );
