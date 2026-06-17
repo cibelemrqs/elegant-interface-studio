@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   BookOpen,
   Bookmark,
@@ -227,6 +227,14 @@ function Sidebar() {
       </div>
 
       <nav className="px-4 space-y-1">
+        <Link
+          to="/dashboard"
+          className="flex items-center gap-3 px-4 py-2.5 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+        >
+          <Home className="size-4" />
+          <span className="flex-1">Dashboard</span>
+          <ChevronRight className="size-3" />
+        </Link>
         <NavItem icon={Home} label="Visão Geral" active />
         <NavItem icon={BookOpen} label="Matérias" />
         <NavItem icon={Bookmark} label="Revisões" badge="4" />
