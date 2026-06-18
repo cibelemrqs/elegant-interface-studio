@@ -9,18 +9,20 @@ import {
 import {
   ArrowUpRight,
   BookOpen,
-  CalendarDays,
   Check,
   ChevronRight,
+  Chrome,
+  ClipboardPaste,
   Command,
   Flame,
-  Headphones,
   Link2,
   Mic,
+  Paperclip,
   Play,
   Plus,
-  Sparkles,
   Target,
+  Trophy,
+  Upload,
   Youtube,
 } from "lucide-react";
 import { useState } from "react";
@@ -74,6 +76,13 @@ const greeting = (() => {
   return "Boa noite";
 })();
 
+type Status = "read" | "review" | "done";
+const STATUS_LABEL: Record<Status, string> = {
+  read: "Para ler",
+  review: "Revisar",
+  done: "Concluído",
+};
+
 type Area = {
   code: string;
   name: string;
@@ -82,8 +91,8 @@ type Area = {
   done: number;
   total: number;
   paceWeek: number;
+  paceGoal: number;
   nextLesson: string;
-  accent: string;
 };
 
 const areas: Area[] = [
@@ -95,30 +104,30 @@ const areas: Area[] = [
     done: 24,
     total: 32,
     paceWeek: 6,
+    paceGoal: 5,
     nextLesson: "ECA – Estatuto da Criança e do Adolescente",
-    accent: "from-amber-500 to-orange-600",
   },
   {
-    code: "EE",
+    code: "EI",
     name: "Especialização em IA",
     kind: "Pós-graduação",
     pct: 0,
     done: 0,
     total: 18,
     paceWeek: 0,
+    paceGoal: 3,
     nextLesson: "Introdução a modelos de linguagem",
-    accent: "from-emerald-500 to-teal-600",
   },
   {
-    code: "UD",
+    code: "UX",
     name: "UX Design",
     kind: "Curso livre",
     pct: 12,
     done: 1,
     total: 8,
     paceWeek: 1,
+    paceGoal: 2,
     nextLesson: "Princípios de design centrado no usuário",
-    accent: "from-violet-500 to-purple-600",
   },
   {
     code: "AP",
@@ -128,8 +137,8 @@ const areas: Area[] = [
     done: 0,
     total: 12,
     paceWeek: 0,
+    paceGoal: 2,
     nextLesson: "O que é um produto de IA?",
-    accent: "from-sky-500 to-cyan-600",
   },
 ];
 
@@ -139,53 +148,46 @@ const globalPct = Math.round(
 const globalDone = areas.reduce((a, b) => a + b.done, 0);
 const globalTotal = areas.reduce((a, b) => a + b.total, 0);
 
+/* Timeline (study sessions) */
 type Block = {
-  start: number; // hour 0-24
+  start: number;
   end: number;
   label: string;
-  kind: "study" | "review" | "agenda";
-  area?: string;
+  status: Status;
+  area: string;
 };
 const timeline: Block[] = [
-  { start: 8, end: 9, label: "Revisão ECA", kind: "review", area: "CS" },
-  { start: 9.5, end: 11, label: "Aula: Atos Administrativos", kind: "study", area: "CS" },
-  { start: 14, end: 15.5, label: "Aula: Lei 13.709", kind: "study", area: "CS" },
-  { start: 16, end: 16.5, label: "Revisar Constituição", kind: "review", area: "CS" },
-  { start: 20, end: 22, label: "Concluir APP Orbi", kind: "agenda" },
+  { start: 8, end: 8.75, label: "Revisão ECA", status: "done", area: "CS" },
+  { start: 10, end: 11.5, label: "Atos Administrativos", status: "done", area: "CS" },
+  { start: 14, end: 15.5, label: "Lei 13.709 — LGPD aplicada", status: "review", area: "CS" },
+  { start: 16.5, end: 17.5, label: "Princípios de UX", status: "read", area: "UX" },
+  { start: 20, end: 21.5, label: "Modelos de linguagem", status: "read", area: "EI" },
 ];
 
-const habits = [
-  { label: "Estudar 1h na Alura", streak: 7, done: false },
-  { label: "Revisar 3 cards", streak: 12, done: true },
-  { label: "Resumo do dia", streak: 4, done: false },
-  { label: "Caminhar 20 min", streak: 23, done: true },
+/* Today's planned lessons */
+type Plan = {
+  id: number;
+  title: string;
+  area: string;
+  duration: number;
+  status: Status;
+  current?: boolean;
+};
+const todayPlan: Plan[] = [
+  { id: 1, title: "Revisão ECA — flashcards", area: "Concurso SED", duration: 25, status: "done" },
+  { id: 2, title: "Atos Administrativos — vídeo 4", area: "Concurso SED", duration: 45, status: "done" },
+  { id: 3, title: "Lei 13.709 — LGPD aplicada", area: "Concurso SED", duration: 50, status: "review", current: true },
+  { id: 4, title: "Princípios de design centrado no usuário", area: "UX Design", duration: 35, status: "read" },
+  { id: 5, title: "O que é um produto de IA?", area: "AI Product Design", duration: 30, status: "read" },
 ];
 
-const agenda = [
-  { day: "16", month: "JUN", title: "Arrumar dashboard no Lovable", time: "Hoje" },
-  { day: "20", month: "JUN", title: "Concluir APP Orbi", time: "22:00" },
-  { day: "22", month: "JUN", title: "Simulado SED", time: "09:00" },
-];
-
-// Heatmap: 84 days (12 weeks × 7), seeded
-function makeHeatmap(): number[] {
-  const out: number[] = [];
-  let seed = 7;
-  for (let i = 0; i < 84; i++) {
-    seed = (seed * 9301 + 49297) % 233280;
-    const r = seed / 233280;
-    // recent days denser
-    const recency = i / 84;
-    const v = r + recency * 0.3;
-    if (v < 0.25) out.push(0);
-    else if (v < 0.45) out.push(1);
-    else if (v < 0.65) out.push(2);
-    else if (v < 0.85) out.push(3);
-    else out.push(4);
-  }
-  return out;
-}
-const heatmap = makeHeatmap();
+/* Streak */
+const streak = {
+  current: 47,
+  record: 62,
+  startedAt: "12 mai",
+  milestones: [7, 30, 100, 365],
+};
 
 const trend = [
   { w: "S1", h: 9 },
@@ -221,7 +223,7 @@ function DashboardGlobalPage() {
           <AreasComparative />
           <TodayPlanner />
 
-          <ConsistencyHeatmap />
+          <StreakMilestones />
           <TrendCard />
         </div>
 
@@ -238,10 +240,7 @@ function DashboardHeader() {
     <header className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-4 animate-fade-up">
       <div className="min-w-0">
         <nav className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-mono text-muted-foreground mb-3">
-          <Link
-            to="/"
-            className="hover:text-foreground transition-colors"
-          >
+          <Link to="/" className="hover:text-foreground transition-colors">
             Início
           </Link>
           <ChevronRight className="size-3" />
@@ -255,7 +254,8 @@ function DashboardHeader() {
             {dayName} · {String(today.getDate()).padStart(2, "0")} {monthName}
           </span>
           Você tem <span className="text-foreground font-medium">3 aulas</span>{" "}
-          previstas e <span className="text-foreground font-medium">2 revisões</span>{" "}
+          previstas e{" "}
+          <span className="text-foreground font-medium">2 revisões</span>{" "}
           atrasadas hoje.
         </p>
       </div>
@@ -274,9 +274,7 @@ function DashboardHeader() {
 /* ---------- Focus Now ---------- */
 
 function FocusNow() {
-  const next = areas
-    .filter((a) => a.pct < 100)
-    .sort((a, b) => a.pct - b.pct)[0];
+  const next = areas.filter((a) => a.pct < 100).sort((a, b) => a.pct - b.pct)[0];
 
   return (
     <section className="col-span-12 lg:col-span-8 rounded-3xl border border-accent/20 bg-gradient-to-br from-accent/[0.06] via-background to-background p-7 lg:p-9 relative overflow-hidden animate-fade-up">
@@ -319,38 +317,42 @@ function DayTimeline() {
   const startH = 6;
   const endH = 24;
   const span = endH - startH;
-  const nowFrac = Math.min(
-    1,
-    Math.max(0, (today.getHours() + today.getMinutes() / 60 - startH) / span),
-  );
-  const toneFor = (k: Block["kind"]) =>
-    k === "study"
-      ? "bg-foreground text-background"
-      : k === "review"
-        ? "bg-accent text-accent-foreground"
-        : "bg-white border border-border text-foreground";
+  const nowDec = today.getHours() + today.getMinutes() / 60;
+  const nowFrac = Math.min(1, Math.max(0, (nowDec - startH) / span));
+  const nowLabel = `${String(today.getHours()).padStart(2, "0")}:${String(today.getMinutes()).padStart(2, "0")}`;
+
+  const styleFor = (s: Status) =>
+    s === "done"
+      ? "bg-foreground text-background border-foreground"
+      : s === "review"
+        ? "bg-accent/15 text-foreground border-accent/40"
+        : "bg-white text-foreground border-border";
+
+  const ticks = [6, 9, 12, 15, 18, 21, 24];
 
   return (
     <div>
-      <div className="flex items-center justify-between text-[10px] uppercase tracking-widest font-mono text-muted-foreground mb-2">
-        <span>Hoje</span>
-        <span className="flex items-center gap-3">
-          <Legend dot="bg-foreground" label="Estudo" />
-          <Legend dot="bg-accent" label="Revisão" />
-          <Legend dot="bg-white border border-border" label="Agenda" />
+      <div className="flex items-center justify-between text-[10px] uppercase tracking-widest font-mono text-muted-foreground mb-3">
+        <span>Seu dia</span>
+        <span className="flex items-center gap-4">
+          <Legend dot="bg-white border border-border" label="Para ler" />
+          <Legend dot="bg-accent/40 border border-accent/50" label="Revisar" />
+          <Legend dot="bg-foreground" label="Concluído" />
         </span>
       </div>
-      <div className="relative h-16 rounded-2xl border border-border bg-white/70 backdrop-blur-md p-2">
-        <div className="relative h-full w-full">
-          {/* hour ticks */}
-          {Array.from({ length: span + 1 }).map((_, i) => (
-            <div
-              key={i}
-              className="absolute top-0 bottom-0 border-l border-dashed border-border/60"
-              style={{ left: `${(i / span) * 100}%` }}
-            />
-          ))}
-          {/* blocks */}
+
+      <div className="relative h-[88px] rounded-2xl border border-border bg-white/70 backdrop-blur-md">
+        {/* hour grid */}
+        {ticks.map((h, i) => (
+          <div
+            key={i}
+            className="absolute top-0 bottom-0 border-l border-dashed border-border/60"
+            style={{ left: `${((h - startH) / span) * 100}%` }}
+          />
+        ))}
+
+        {/* blocks */}
+        <div className="absolute inset-x-2 top-2 bottom-2">
           {timeline.map((b, i) => {
             const left = ((b.start - startH) / span) * 100;
             const width = ((b.end - b.start) / span) * 100;
@@ -358,28 +360,49 @@ function DayTimeline() {
               <div
                 key={i}
                 className={
-                  "absolute top-1 bottom-1 rounded-lg px-2 flex items-center text-[10px] font-medium truncate shadow-sm " +
-                  toneFor(b.kind)
+                  "absolute top-0 bottom-0 rounded-xl border px-2.5 py-1.5 flex flex-col justify-between overflow-hidden shadow-sm transition-transform hover:-translate-y-0.5 cursor-pointer " +
+                  styleFor(b.status)
                 }
-                style={{ left: `${left}%`, width: `${width}%` }}
-                title={b.label}
+                style={{ left: `${left}%`, width: `calc(${width}% - 4px)` }}
+                title={`${b.label} · ${STATUS_LABEL[b.status]}`}
               >
-                <span className="truncate">{b.label}</span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono text-[9px] uppercase tracking-widest opacity-70 truncate">
+                    {b.area}
+                  </span>
+                  <span className="font-mono text-[9px] uppercase tracking-widest opacity-70 shrink-0">
+                    {STATUS_LABEL[b.status]}
+                  </span>
+                </div>
+                <p className="text-[11px] font-medium leading-tight line-clamp-2">
+                  {b.label}
+                </p>
               </div>
             );
           })}
-          {/* now */}
-          <div
-            className="absolute -top-1 -bottom-1 w-px bg-accent"
-            style={{ left: `${nowFrac * 100}%` }}
-          >
-            <div className="absolute -top-1 -translate-x-1/2 size-2 rounded-full bg-accent ring-2 ring-background" />
+        </div>
+
+        {/* now line */}
+        <div
+          className="absolute -top-2 -bottom-2 w-px bg-accent z-10 pointer-events-none"
+          style={{ left: `${nowFrac * 100}%` }}
+        >
+          <div className="absolute -top-1.5 -translate-x-1/2 size-2.5 rounded-full bg-accent ring-2 ring-background" />
+          <div className="absolute -bottom-6 -translate-x-1/2 whitespace-nowrap text-[9px] font-mono uppercase tracking-widest text-accent">
+            agora · {nowLabel}
           </div>
         </div>
       </div>
-      <div className="flex justify-between text-[10px] font-mono text-muted-foreground mt-1.5 px-1">
-        {[6, 9, 12, 15, 18, 21, 24].map((h) => (
-          <span key={h}>{String(h).padStart(2, "0")}h</span>
+
+      <div className="relative mt-2 h-3">
+        {ticks.map((h) => (
+          <span
+            key={h}
+            className="absolute -translate-x-1/2 text-[10px] font-mono text-muted-foreground"
+            style={{ left: `${((h - startH) / span) * 100}%` }}
+          >
+            {String(h).padStart(2, "0")}h
+          </span>
         ))}
       </div>
     </div>
@@ -401,7 +424,7 @@ function GlobalProgress() {
   const stats = [
     { label: "Áreas ativas", value: areas.length.toString() },
     { label: "Aulas concluídas", value: `${globalDone}/${globalTotal}` },
-    { label: "Streak", value: "12d", icon: Flame },
+    { label: "Streak", value: `${streak.current}d`, icon: Flame },
     { label: "Horas (semana)", value: "17h" },
   ];
 
@@ -494,7 +517,190 @@ function Ring({
   );
 }
 
-/* ---------- Areas comparative ---------- */
+/* ---------- Import Stack (light bento, 4 distinct cards) ---------- */
+
+function ImportStack() {
+  return (
+    <section className="col-span-12 animate-fade-up">
+      <div className="flex items-end justify-between gap-4 mb-5">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.2em] font-mono text-muted-foreground">
+            Importar conteúdo
+          </p>
+          <h2 className="font-serif italic text-3xl font-bold mt-1 leading-tight">
+            De onde vem sua aula?
+          </h2>
+        </div>
+        <p className="text-xs text-muted-foreground max-w-xs text-right hidden md:block">
+          Quatro formas de trazer conteúdo. A IA gera resumo, flashcards e
+          cronograma em cada uma.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-12 gap-4">
+        {/* 1. Plataforma de curso */}
+        <article className="col-span-12 lg:col-span-7 rounded-3xl border border-border bg-white p-7 relative overflow-hidden group hover:border-foreground/30 transition-colors">
+          <div className="absolute top-0 right-0 size-40 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div className="size-11 rounded-2xl bg-foreground text-background grid place-items-center">
+                  <BookOpen className="size-5" />
+                </div>
+                <div>
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                    Mais usado
+                  </p>
+                  <h3 className="font-serif italic text-2xl font-bold leading-tight">
+                    Aula de plataforma de curso
+                  </h3>
+                </div>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground mb-5">
+              Hotmart, Kiwify, Eduzz, Memberkit, Udemy, Coursera e outras.
+            </p>
+
+            <div className="grid sm:grid-cols-2 gap-3 mb-5">
+              <div className="rounded-2xl border border-border bg-secondary/30 p-4">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Link2 className="size-3.5 text-accent" />
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-foreground">
+                    Por link ou código
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Mostramos passo a passo como pegar o link direto da aula.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-border bg-secondary/30 p-4">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Chrome className="size-3.5 text-accent" />
+                  <p className="font-mono text-[10px] uppercase tracking-widest text-foreground">
+                    Extensão Chrome
+                  </p>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Captura o áudio direto do player. Se não permitir, pega a
+                  legenda automaticamente.
+                </p>
+              </div>
+            </div>
+
+            <p className="flex items-start gap-2 text-xs text-muted-foreground mb-6">
+              <Paperclip className="size-3.5 mt-0.5 shrink-0 text-foreground/60" />
+              Anexe PDFs e materiais da aula para a IA enriquecer o resumo.
+            </p>
+
+            <div className="flex items-center gap-3">
+              <button className="inline-flex items-center gap-2 px-5 py-2.5 bg-foreground text-background rounded-full text-sm font-medium hover:scale-[1.02] transition-transform">
+                Importar aula <ArrowUpRight className="size-4" />
+              </button>
+              <a
+                href="#"
+                className="text-xs font-medium text-foreground hover:text-accent inline-flex items-center gap-1"
+              >
+                Instalar extensão <ChevronRight className="size-3" />
+              </a>
+            </div>
+          </div>
+        </article>
+
+        {/* 2. YouTube */}
+        <article className="col-span-12 lg:col-span-5 rounded-3xl border border-border bg-white p-7 hover:border-foreground/30 transition-colors flex flex-col">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="size-11 rounded-2xl border border-border bg-secondary/40 grid place-items-center">
+              <Youtube className="size-5 text-foreground" />
+            </div>
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                Link · transcrição
+              </p>
+              <h3 className="font-serif italic text-2xl font-bold leading-tight">
+                YouTube
+              </h3>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground mb-5 flex-1">
+            Cole o link. Quando existe legenda, usamos a transcrição direto —
+            bem mais rápido que processar áudio.
+          </p>
+          <div className="flex items-stretch gap-2">
+            <div className="flex-1 flex items-center px-4 rounded-full border border-border bg-secondary/30 text-xs font-mono text-muted-foreground">
+              https://youtube.com/…
+            </div>
+            <button className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-foreground text-background rounded-full text-xs font-medium hover:scale-[1.02] transition-transform shrink-0">
+              Importar
+            </button>
+          </div>
+        </article>
+
+        {/* 3. Áudio gravado */}
+        <article className="col-span-12 lg:col-span-5 rounded-3xl border border-border bg-white p-7 hover:border-foreground/30 transition-colors flex flex-col">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="size-11 rounded-2xl border border-border bg-secondary/40 grid place-items-center">
+              <Mic className="size-5 text-foreground" />
+            </div>
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                Upload
+              </p>
+              <h3 className="font-serif italic text-2xl font-bold leading-tight">
+                Áudio gravado
+              </h3>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Aulas próprias, reuniões, gravações pessoais.
+          </p>
+          <button className="flex-1 min-h-[88px] rounded-2xl border border-dashed border-border bg-secondary/20 hover:bg-secondary/40 hover:border-foreground/40 transition-colors grid place-items-center group">
+            <div className="text-center">
+              <Upload className="size-5 mx-auto text-muted-foreground group-hover:text-foreground transition-colors" />
+              <p className="text-xs font-medium mt-2">Arraste ou selecione</p>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mt-1">
+                MP3 · MP4 · M4A · WAV
+              </p>
+            </div>
+          </button>
+        </article>
+
+        {/* 4. Texto / legenda */}
+        <article className="col-span-12 lg:col-span-7 rounded-3xl border border-border bg-white p-7 hover:border-foreground/30 transition-colors flex flex-col">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="size-11 rounded-2xl border border-border bg-secondary/40 grid place-items-center">
+              <ClipboardPaste className="size-5 text-foreground" />
+            </div>
+            <div>
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                Colar texto
+              </p>
+              <h3 className="font-serif italic text-2xl font-bold leading-tight">
+                Texto ou legenda colada
+              </h3>
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4">
+            Para plataformas que mostram a transcrição na própria página — copie,
+            cole aqui e a IA gera o resumo sem precisar do áudio.
+          </p>
+          <div className="rounded-2xl border border-border bg-secondary/20 p-4 flex-1 min-h-[100px] text-xs font-mono text-muted-foreground">
+            Cole a transcrição, legenda ou texto da aula aqui…
+          </div>
+          <div className="mt-4 flex items-center justify-between">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              Sem limite de tamanho
+            </p>
+            <button className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-foreground text-background rounded-full text-xs font-medium hover:scale-[1.02] transition-transform">
+              Gerar resumo <ArrowUpRight className="size-3.5" />
+            </button>
+          </div>
+        </article>
+      </div>
+    </section>
+  );
+}
+
+/* ---------- Areas comparative (recolored) ---------- */
 
 function AreasComparative() {
   return (
@@ -520,15 +726,11 @@ function AreasComparative() {
 }
 
 function AreaRow({ area }: { area: Area }) {
+  const above = area.paceWeek >= area.paceGoal && area.paceWeek > 0;
   return (
     <div className="py-4 grid grid-cols-12 gap-4 items-center group cursor-pointer hover:bg-secondary/40 -mx-3 px-3 rounded-2xl transition-colors">
       <div className="col-span-12 sm:col-span-5 flex items-center gap-3 min-w-0">
-        <div
-          className={
-            "size-10 rounded-xl text-white grid place-items-center font-mono text-xs font-semibold bg-gradient-to-br shrink-0 " +
-            area.accent
-          }
-        >
+        <div className="size-10 rounded-xl bg-foreground text-background grid place-items-center font-serif italic text-sm font-bold shrink-0">
           {area.code}
         </div>
         <div className="min-w-0">
@@ -539,9 +741,9 @@ function AreaRow({ area }: { area: Area }) {
         </div>
       </div>
       <div className="col-span-6 sm:col-span-3 flex items-center gap-3">
-        <div className="flex-1 h-1 rounded-full bg-secondary overflow-hidden">
+        <div className="flex-1 h-1 rounded-full bg-border overflow-hidden">
           <div
-            className="h-full bg-foreground rounded-full"
+            className="h-full bg-foreground rounded-full transition-all"
             style={{ width: `${area.pct}%` }}
           />
         </div>
@@ -550,273 +752,261 @@ function AreaRow({ area }: { area: Area }) {
         </span>
       </div>
       <div className="col-span-3 sm:col-span-2 text-center">
-        <p className="font-mono text-sm tabular-nums">{area.paceWeek}</p>
+        <p
+          className={
+            "font-mono text-sm tabular-nums " +
+            (above ? "text-accent" : "text-foreground")
+          }
+        >
+          {area.paceWeek}
+          <span className="text-muted-foreground">/{area.paceGoal}</span>
+        </p>
         <p className="text-[10px] uppercase tracking-widest font-mono text-muted-foreground">
           aulas/sem
         </p>
       </div>
-      <div className="col-span-3 sm:col-span-2 text-right">
-        <p className="text-xs text-muted-foreground truncate">Próxima</p>
+      <div className="col-span-3 sm:col-span-2 text-right min-w-0">
+        <p className="text-[10px] uppercase tracking-widest font-mono text-muted-foreground">
+          Próxima
+        </p>
         <p className="text-xs font-medium truncate">{area.nextLesson}</p>
       </div>
     </div>
   );
 }
 
-/* ---------- Today Planner ---------- */
+/* ---------- Today Planner (study queue) ---------- */
 
 function TodayPlanner() {
-  const [tab, setTab] = useState<"habits" | "agenda">("habits");
+  const [items, setItems] = useState(todayPlan);
+  const done = items.filter((i) => i.status === "done").length;
+  const pct = Math.round((done / items.length) * 100);
+
+  const toggle = (id: number) =>
+    setItems((prev) =>
+      prev.map((i) =>
+        i.id === id
+          ? { ...i, status: i.status === "done" ? "read" : ("done" as Status) }
+          : i,
+      ),
+    );
+
+  const statusStyle = (s: Status) =>
+    s === "done"
+      ? "bg-foreground text-background border-foreground"
+      : s === "review"
+        ? "bg-accent/15 text-foreground border-accent/40"
+        : "bg-white text-muted-foreground border-border";
+
   return (
     <section className="col-span-12 lg:col-span-4 rounded-3xl border border-border bg-white p-7 animate-fade-up flex flex-col">
-      <div className="flex items-center justify-between mb-5">
-        <p className="text-[10px] uppercase tracking-[0.2em] font-mono text-muted-foreground">
-          Planejamento de hoje
-        </p>
-        <CalendarDays className="size-4 text-muted-foreground" />
-      </div>
-      <div className="flex items-center gap-1 p-1 bg-secondary rounded-full mb-5 w-fit">
-        {(["habits", "agenda"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={
-              "px-3.5 py-1.5 rounded-full text-xs font-medium transition-colors " +
-              (tab === t
-                ? "bg-foreground text-background"
-                : "text-muted-foreground hover:text-foreground")
-            }
-          >
-            {t === "habits" ? "Hábitos" : "Agenda"}
-          </button>
-        ))}
-      </div>
-
-      {tab === "habits" ? (
-        <div className="space-y-1.5 flex-1">
-          {habits.map((h) => (
-            <div
-              key={h.label}
-              className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-secondary/50 transition-colors cursor-pointer"
-            >
-              <div
-                className={
-                  "size-5 rounded-md border grid place-items-center shrink-0 " +
-                  (h.done
-                    ? "bg-foreground border-foreground text-background"
-                    : "border-border")
-                }
-              >
-                {h.done && <Check className="size-3" />}
-              </div>
-              <p
-                className={
-                  "text-sm flex-1 truncate " +
-                  (h.done ? "text-muted-foreground line-through" : "")
-                }
-              >
-                {h.label}
-              </p>
-              <span className="inline-flex items-center gap-1 text-[10px] font-mono text-accent">
-                <Flame className="size-3" /> {h.streak}
-              </span>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-2 flex-1">
-          {agenda.map((a) => (
-            <div
-              key={a.title}
-              className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-secondary/50 transition-colors cursor-pointer"
-            >
-              <div className="text-center min-w-[36px]">
-                <p className="font-mono font-semibold text-base leading-none tabular-nums">
-                  {a.day}
-                </p>
-                <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-mono mt-0.5">
-                  {a.month}
-                </p>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{a.title}</p>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono">
-                  {a.time}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <a
-        href="#"
-        className="mt-4 text-xs font-medium text-accent inline-flex items-center gap-1"
-      >
-        Ver planejamento completo <ChevronRight className="size-3" />
-      </a>
-    </section>
-  );
-}
-
-/* ---------- Import Stack ---------- */
-
-function ImportStack() {
-  const items = [
-    {
-      icon: Link2,
-      title: "Curso completo",
-      sub: "Alura, Udemy, Coursera, Hotmart…",
-      tag: "Mais usado",
-    },
-    {
-      icon: Youtube,
-      title: "Vídeo do YouTube",
-      sub: "Cole o link — extraímos a transcrição",
-      tag: null,
-    },
-    {
-      icon: Mic,
-      title: "Áudio ou gravação",
-      sub: "MP3, M4A ou grave direto pelo app",
-      tag: null,
-    },
-    {
-      icon: Headphones,
-      title: "Podcast / aula",
-      sub: "RSS, Spotify, Apple Podcasts",
-      tag: null,
-    },
-  ];
-
-  return (
-    <section className="col-span-12 rounded-3xl border border-foreground/10 bg-foreground text-background p-7 lg:p-9 relative overflow-hidden animate-fade-up">
-      <div className="absolute -top-32 -left-20 size-80 rounded-full bg-accent/25 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -right-20 size-80 rounded-full bg-accent/15 blur-3xl pointer-events-none" />
-
-      <div className="relative grid lg:grid-cols-[minmax(0,1fr)_auto] gap-6 items-end mb-8">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] font-mono text-accent mb-4">
-            <Sparkles className="size-3" />
-            Importar conteúdo
+      <div className="flex items-start justify-between gap-4 mb-5">
+        <div className="flex items-center gap-4">
+          <Ring value={pct} size={64} stroke={5} />
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.2em] font-mono text-muted-foreground">
+              Planejamento de hoje
+            </p>
+            <h2 className="font-serif italic text-2xl font-bold leading-tight mt-0.5">
+              {dayName}, {today.getDate()} {monthName}
+            </h2>
           </div>
-          <h2 className="font-serif italic text-3xl lg:text-[40px] leading-[1.05] font-bold text-balance max-w-2xl">
-            Traga qualquer aula. A gente transforma em estudo.
-          </h2>
-          <p className="mt-3 text-sm text-background/60 max-w-lg">
-            Curso, vídeo, áudio ou podcast — geramos resumos, flashcards e
-            cronograma automaticamente para cada nova área.
-          </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <button className="inline-flex items-center gap-2 px-5 py-3 bg-background text-foreground rounded-full text-sm font-medium hover:scale-[1.02] active:scale-[0.99] transition-transform">
-            <Plus className="size-4" /> Nova importação
-          </button>
-        </div>
+        <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground border border-border rounded-full px-2.5 py-1 shrink-0">
+          {done} de {items.length}
+        </span>
       </div>
 
-      <div className="relative grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-        {items.map((i) => (
-          <button
-            key={i.title}
-            className="group relative text-left rounded-2xl border border-background/10 bg-background/[0.04] backdrop-blur-md p-5 hover:bg-background/[0.08] hover:border-background/20 transition-all"
-          >
-            <div className="flex items-start justify-between mb-6">
-              <div className="size-11 rounded-xl bg-accent/15 text-accent grid place-items-center group-hover:bg-accent/25 transition-colors">
-                <i.icon className="size-5" />
-              </div>
-              {i.tag && (
-                <span className="text-[9px] uppercase tracking-widest font-mono text-accent px-2 py-1 rounded-full border border-accent/30">
-                  {i.tag}
-                </span>
+      <ul className="flex-1 -mx-2">
+        {items.map((it) => {
+          const isDone = it.status === "done";
+          return (
+            <li
+              key={it.id}
+              className={
+                "relative flex items-start gap-3 px-3 py-3 rounded-2xl transition-colors " +
+                (it.current && !isDone
+                  ? "bg-accent/[0.06]"
+                  : "hover:bg-secondary/40")
+              }
+            >
+              {it.current && !isDone && (
+                <span className="absolute left-0 top-3 bottom-3 w-[3px] rounded-full bg-accent" />
               )}
-            </div>
-            <p className="font-serif italic text-xl font-bold leading-tight">
-              {i.title}
-            </p>
-            <p className="text-xs text-background/55 mt-1.5 leading-relaxed">
-              {i.sub}
-            </p>
-            <div className="mt-5 inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-widest text-background/60 group-hover:text-accent transition-colors">
-              Começar <ArrowUpRight className="size-3" />
-            </div>
-          </button>
-        ))}
-      </div>
+              <button
+                onClick={() => toggle(it.id)}
+                aria-label={isDone ? "Desmarcar" : "Concluir"}
+                className={
+                  "mt-0.5 size-6 rounded-full border-2 grid place-items-center shrink-0 transition-colors " +
+                  (isDone
+                    ? "bg-foreground border-foreground text-background"
+                    : "border-foreground/30 hover:border-foreground")
+                }
+              >
+                {isDone && <Check className="size-3.5" strokeWidth={3} />}
+              </button>
+              <div className="flex-1 min-w-0">
+                <p
+                  className={
+                    "font-serif italic text-base font-bold leading-snug " +
+                    (isDone ? "line-through opacity-50" : "")
+                  }
+                >
+                  {it.title}
+                </p>
+                <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mt-0.5 truncate">
+                  {it.area}
+                </p>
+              </div>
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                <span
+                  className={
+                    "text-[9px] font-mono uppercase tracking-widest border rounded-full px-2 py-0.5 " +
+                    statusStyle(it.status)
+                  }
+                >
+                  {STATUS_LABEL[it.status]}
+                </span>
+                <span className="text-[10px] font-mono text-muted-foreground tabular-nums">
+                  {it.duration} min
+                </span>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
 
-      <div className="relative mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-[10px] font-mono uppercase tracking-widest text-background/45">
-        <span className="text-background/70">Arraste arquivos aqui</span>
-        <span>·</span>
-        <span>PDF</span>
-        <span>·</span>
-        <span>EPUB</span>
-        <span>·</span>
-        <span>DOCX</span>
-        <span>·</span>
-        <span>SRT</span>
+      <div className="mt-5 pt-4 border-t border-border flex items-center justify-between">
+        <button className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-border text-xs font-medium text-foreground hover:bg-secondary/40 transition-colors">
+          <Plus className="size-3.5" /> Adicionar à fila
+        </button>
+        <a
+          href="#"
+          className="text-xs font-medium text-foreground hover:text-accent inline-flex items-center gap-1"
+        >
+          Ver semana <ChevronRight className="size-3" />
+        </a>
       </div>
     </section>
   );
 }
 
-/* ---------- Consistency Heatmap ---------- */
+/* ---------- Streak + Milestones ---------- */
 
-function ConsistencyHeatmap() {
-  const days = ["S", "T", "Q", "Q", "S", "S", "D"];
-  const intensities = [
-    "bg-secondary",
-    "bg-accent/20",
-    "bg-accent/40",
-    "bg-accent/70",
-    "bg-accent",
-  ];
-  // arrange into 7 rows × 12 cols
-  const grid: number[][] = Array.from({ length: 7 }, () => []);
-  heatmap.forEach((v, i) => {
-    grid[i % 7].push(v);
-  });
-
-  const total = heatmap.reduce((a, b) => a + (b > 0 ? 1 : 0), 0);
+function StreakMilestones() {
+  const { current, record, startedAt, milestones } = streak;
+  const next = milestones.find((m) => m > current) ?? milestones[milestones.length - 1];
+  const prev = [...milestones].reverse().find((m) => m <= current) ?? 0;
+  const towardsNext = Math.min(
+    100,
+    Math.round(((current - prev) / (next - prev)) * 100),
+  );
+  const daysToNext = Math.max(0, next - current);
 
   return (
     <section className="col-span-12 lg:col-span-8 rounded-3xl border border-border bg-white p-7 animate-fade-up">
-      <SectionTitle
-        eyebrow="Consistência"
-        title={`${total} dias ativos nos últimos 84`}
-      />
-      <div className="mt-6 flex gap-3">
-        <div className="flex flex-col justify-between text-[9px] uppercase font-mono text-muted-foreground py-0.5">
-          {days.map((d, i) => (
-            <span key={i}>{d}</span>
-          ))}
+      <SectionTitle eyebrow="Consistência" title="Sequência de estudos" />
+
+      <div className="mt-6 grid lg:grid-cols-[auto_1fr] gap-8 items-center">
+        <div className="flex items-baseline gap-3">
+          <span className="font-serif italic text-[88px] leading-none font-bold tabular-nums">
+            {current}
+          </span>
+          <Flame className="size-7 text-accent -translate-y-2" />
         </div>
-        <div className="flex-1 grid grid-rows-7 gap-1">
-          {grid.map((row, ri) => (
-            <div
-              key={ri}
-              className="grid gap-1"
-              style={{ gridTemplateColumns: `repeat(${row.length}, minmax(0,1fr))` }}
-            >
-              {row.map((v, ci) => (
-                <div
-                  key={ci}
-                  className={"aspect-square rounded-[4px] " + intensities[v]}
-                  title={`Nível ${v}`}
-                />
-              ))}
-            </div>
-          ))}
+        <div className="min-w-0">
+          <p className="text-sm text-foreground">
+            <span className="font-medium">dias de estudo seguidos.</span>{" "}
+            <span className="text-muted-foreground">
+              Faltam{" "}
+              <span className="text-foreground font-medium tabular-nums">
+                {daysToNext} dias
+              </span>{" "}
+              para bater o marco de{" "}
+              <span className="text-foreground font-medium tabular-nums">
+                {next}
+              </span>
+              .
+            </span>
+          </p>
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mt-2">
+            Recorde pessoal: {record} dias · Iniciou em {startedAt}
+          </p>
         </div>
       </div>
-      <div className="flex items-center justify-between mt-4 text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-        <span>12 semanas</span>
-        <span className="flex items-center gap-1.5">
-          menos
-          {intensities.map((c, i) => (
-            <span key={i} className={"size-2.5 rounded-[3px] " + c} />
-          ))}
-          mais
-        </span>
+
+      {/* Milestones rail */}
+      <div className="mt-8">
+        <div className="relative h-12">
+          {/* baseline */}
+          <div className="absolute left-0 right-0 top-1/2 -translate-y-1/2 h-px bg-border" />
+          {/* progress overlay up to current */}
+          <div
+            className="absolute left-0 top-1/2 -translate-y-1/2 h-px bg-foreground transition-all"
+            style={{
+              width: `${Math.min(100, (current / milestones[milestones.length - 1]) * 100)}%`,
+            }}
+          />
+          {milestones.map((m) => {
+            const left = (m / milestones[milestones.length - 1]) * 100;
+            const reached = current >= m;
+            const isNext = m === next && current < m;
+            return (
+              <div
+                key={m}
+                className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center"
+                style={{ left: `${left}%` }}
+              >
+                <div
+                  className={
+                    "size-4 rounded-full border-2 grid place-items-center transition-colors " +
+                    (reached
+                      ? "bg-foreground border-foreground"
+                      : isNext
+                        ? "bg-white border-accent"
+                        : "bg-white border-border")
+                  }
+                >
+                  {reached && <Check className="size-2 text-background" strokeWidth={4} />}
+                  {isNext && <span className="size-1.5 rounded-full bg-accent" />}
+                </div>
+                <span
+                  className={
+                    "absolute top-6 font-mono text-[10px] uppercase tracking-widest tabular-nums " +
+                    (isNext
+                      ? "text-accent font-medium"
+                      : reached
+                        ? "text-foreground"
+                        : "text-muted-foreground")
+                  }
+                >
+                  {m}d
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Progress to next */}
+      <div className="mt-12 pt-5 border-t border-border flex items-center gap-4">
+        <Trophy className="size-4 text-muted-foreground shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline justify-between mb-2">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              Próximo marco: {next} dias
+            </p>
+            <p className="font-mono text-xs tabular-nums">
+              {towardsNext}%
+            </p>
+          </div>
+          <div className="h-1.5 rounded-full bg-border overflow-hidden">
+            <div
+              className="h-full bg-foreground rounded-full transition-all"
+              style={{ width: `${towardsNext}%` }}
+            />
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -908,7 +1098,7 @@ function MotivationalBanner() {
           </p>
         </div>
         <button className="shrink-0 inline-flex items-center gap-2 px-5 py-3 bg-background text-foreground rounded-full text-sm font-medium hover:scale-[1.02] transition-transform">
-          <BookOpen className="size-4" /> Ver hábitos
+          <BookOpen className="size-4" /> Continuar estudo
         </button>
       </div>
     </section>
